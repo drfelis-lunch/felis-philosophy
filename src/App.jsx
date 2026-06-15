@@ -195,7 +195,7 @@ function Post({ post, comments, reactions, onToggleReaction, onEditPost, onDelet
 }
 
 /* ============ 주제 상세 ============ */
-function TopicDetail({ topic, profile, onBack, showToast }) {
+function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
   const [posts, setPosts] = useState([]);
   const [commentsByPost, setCommentsByPost] = useState({});
   const [reactions, setReactions] = useState({});
@@ -203,7 +203,11 @@ function TopicDetail({ topic, profile, onBack, showToast }) {
   const [loading, setLoading] = useState(true);
   const [adminReveal, setAdminReveal] = useState(false);
   const [identityMap, setIdentityMap] = useState({});
+  const [editingTopic, setEditingTopic] = useState(false);
+  const [tFairy, setTFairy] = useState(topic.host_label || "");
+  const [tTitle, setTTitle] = useState(topic.title);
   const isAdmin = profile?.is_admin;
+  const canManageTopic = topic.created_by === profile?.id || isAdmin;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -282,17 +286,62 @@ function TopicDetail({ topic, profile, onBack, showToast }) {
   const decoratedPosts = posts.map((p) => ({ ...p, admin_email: adminReveal ? identityMap[p.id] : null }));
   const fairy = topic.host_label && topic.host_label.trim() ? topic.host_label : "이번 달 회의요정";
 
+  const saveTopic = async () => {
+    if (!tTitle.trim()) { showToast("주제를 입력해 주세요", true); return; }
+    const { error } = await supabase.from("topics")
+      .update({ title: tTitle.trim(), host_label: tFairy.trim() || null })
+      .eq("id", topic.id);
+    if (error) { showToast("주제 수정 실패", true); return; }
+    showToast("주제를 수정했어요");
+    setEditingTopic(false);
+    onTopicChanged();
+  };
+
+  const deleteTopic = async () => {
+    if (!window.confirm("이 주제와 모든 이야기·답글이 삭제됩니다. 정말 삭제할까요?")) return;
+    const { error } = await supabase.from("topics").delete().eq("id", topic.id);
+    if (error) { showToast("주제 삭제 실패", true); return; }
+    showToast("주제를 삭제했어요");
+    onBack();
+    onTopicChanged();
+  };
+
   return (
     <div className="wrap">
       <button className="back-link" onClick={onBack}><Icon name="back" size={15} /> 모든 주제</button>
 
       <div className="detail-topic">
-        <div className="detail-top">
-          <span className="detail-badge">{topic.month_label}</span>
-          <span className="detail-fairy"><Icon name="sparkle" size={13} /> 회의요정 {fairy}</span>
-          <span className="detail-opendate">· {shortDate(topic.created_at)} 개설</span>
-        </div>
-        <div className="detail-q">{topic.title}</div>
+        {editingTopic ? (
+          <>
+            <div className="field">
+              <label>회의요정 (진행자) — 비우면 익명</label>
+              <input value={tFairy} onChange={(e) => setTFairy(e.target.value)} placeholder="예: 로지 (또는 비워두기)" />
+            </div>
+            <div className="field">
+              <label>주제 (질문)</label>
+              <textarea rows={2} value={tTitle} onChange={(e) => setTTitle(e.target.value)} />
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn-primary" onClick={saveTopic}>저장</button>
+              <button className="btn-ghost" onClick={() => { setTTitle(topic.title); setTFairy(topic.host_label || ""); setEditingTopic(false); }}>취소</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="detail-top">
+              <span className="detail-badge">{topic.month_label}</span>
+              <span className="detail-fairy"><Icon name="sparkle" size={13} /> 회의요정 {fairy}</span>
+              <span className="detail-opendate">· {shortDate(topic.created_at)} 개설</span>
+              {canManageTopic && (
+                <span className="topic-manage">
+                  <button className="act-mini" onClick={() => setEditingTopic(true)}><Icon name="edit" size={13} /> 수정</button>
+                  <button className="act-mini del" onClick={deleteTopic}><Icon name="trash" size={13} /> 삭제</button>
+                </span>
+              )}
+            </div>
+            <div className="detail-q">{topic.title}</div>
+          </>
+        )}
       </div>
 
       {isAdmin && (
@@ -400,16 +449,21 @@ function NewTopicForm({ onCreated, showToast }) {
 function Board({ onOpen, showToast }) {
   const [topics, setTopics] = useState([]);
   const [counts, setCounts] = useState({});
+  const [commentCounts, setCommentCounts] = useState({});
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     const { data: ts } = await supabase.from("topics").select("*").order("created_at", { ascending: false });
     const { data: ps } = await supabase.from("posts_public").select("topic_id");
+    const { data: cs } = await supabase.from("comments_public").select("topic_id");
+    const pmap = {};
+    (ps || []).forEach((p) => { pmap[p.topic_id] = (pmap[p.topic_id] || 0) + 1; });
     const cmap = {};
-    (ps || []).forEach((p) => { cmap[p.topic_id] = (cmap[p.topic_id] || 0) + 1; });
+    (cs || []).forEach((c) => { cmap[c.topic_id] = (cmap[c.topic_id] || 0) + 1; });
     setTopics(ts || []);
-    setCounts(cmap);
+    setCounts(pmap);
+    setCommentCounts(cmap);
     setLoading(false);
   }, []);
 
@@ -443,6 +497,7 @@ function Board({ onOpen, showToast }) {
               <div className="topic-q">{t.title}</div>
               <div className="topic-stats">
                 <span><Paw className="paw" /> {counts[t.id] || 0}개의 이야기</span>
+                <span><Icon name="message" size={13} /> {commentCounts[t.id] || 0}개의 답글</span>
               </div>
             </div>
           );
@@ -459,6 +514,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState("");
   const [activeTopic, setActiveTopic] = useState(null);
+  const [boardKey, setBoardKey] = useState(0);
   const [toast, setToast] = useState({ msg: "", err: false });
 
   const showToast = (msg, err = false) => {
@@ -513,9 +569,9 @@ export default function App() {
       </div>
 
       {activeTopic ? (
-        <TopicDetail topic={activeTopic} profile={profile} onBack={goHome} showToast={showToast} />
+        <TopicDetail topic={activeTopic} profile={profile} onBack={goHome} onTopicChanged={() => setBoardKey((k) => k + 1)} showToast={showToast} />
       ) : (
-        <Board onOpen={setActiveTopic} showToast={showToast} />
+        <Board key={boardKey} onOpen={setActiveTopic} showToast={showToast} />
       )}
 
       <Toast msg={toast.msg} err={toast.err} />
