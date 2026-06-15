@@ -7,7 +7,9 @@ const LOGO_URL = "/felis-logo.svg";
 /* ============ 유틸 ============ */
 function shortDate(iso) {
   const d = new Date(iso);
-  return `${d.getMonth() + 1}.${d.getDate()}`;
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}.${mm}.${dd}`;
 }
 function timeOrDate(iso) {
   const d = new Date(iso);
@@ -368,7 +370,7 @@ function NewTopicForm({ onCreated, showToast }) {
         <div className="field">
           <label>회의 년</label>
           <select value={year} onChange={(e) => setYear(e.target.value)}>
-            {["25", "26", "27", "28"].map((y) => <option key={y} value={y}>{y}년</option>)}
+            {Array.from({ length: 10 }, (_, i) => String(26 + i)).map((y) => <option key={y} value={y}>{y}년</option>)}
           </select>
         </div>
         <div className="field">
