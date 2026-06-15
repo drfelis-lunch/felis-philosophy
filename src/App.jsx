@@ -43,7 +43,7 @@ function Login({ onError, error }) {
   };
   return (
     <div className="login-screen">
-      <div className="login-logo" dangerouslySetInnerHTML={{ __html: "" }}>
+      <div className="login-logo">
         <img src={LOGO_URL} alt="닥터펠리스" style={{ width: "100%", height: "100%" }} />
       </div>
       <h1 className="login-title">펠리스 철학관</h1>
