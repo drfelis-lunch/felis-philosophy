@@ -206,6 +206,7 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
   const [editingTopic, setEditingTopic] = useState(false);
   const [tFairy, setTFairy] = useState(topic.host_label || "");
   const [tTitle, setTTitle] = useState(topic.title);
+  const [tDesc, setTDesc] = useState(topic.description || "");
   const isAdmin = profile?.is_admin;
   const canManageTopic = topic.created_by === profile?.id || isAdmin;
 
@@ -289,7 +290,7 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
   const saveTopic = async () => {
     if (!tTitle.trim()) { showToast("주제를 입력해 주세요", true); return; }
     const { error } = await supabase.from("topics")
-      .update({ title: tTitle.trim(), host_label: tFairy.trim() || null })
+      .update({ title: tTitle.trim(), description: tDesc.trim() || null, host_label: tFairy.trim() || null })
       .eq("id", topic.id);
     if (error) { showToast("주제 수정 실패", true); return; }
     showToast("주제를 수정했어요");
@@ -321,9 +322,13 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
               <label>주제 (질문)</label>
               <textarea rows={2} value={tTitle} onChange={(e) => setTTitle(e.target.value)} />
             </div>
+            <div className="field">
+              <label>설명 / 조건 (선택) — 줄바꿈 그대로 표시돼요</label>
+              <textarea rows={3} value={tDesc} onChange={(e) => setTDesc(e.target.value)} placeholder={"예시나 조건을 자유롭게 적어주세요."} />
+            </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button className="btn-primary" onClick={saveTopic}>저장</button>
-              <button className="btn-ghost" onClick={() => { setTTitle(topic.title); setTFairy(topic.host_label || ""); setEditingTopic(false); }}>취소</button>
+              <button className="btn-ghost" onClick={() => { setTTitle(topic.title); setTFairy(topic.host_label || ""); setTDesc(topic.description || ""); setEditingTopic(false); }}>취소</button>
             </div>
           </>
         ) : (
@@ -340,6 +345,9 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
               )}
             </div>
             <div className="detail-q">{topic.title}</div>
+            {topic.description && topic.description.trim() && (
+              <div className="detail-desc">{topic.description}</div>
+            )}
           </>
         )}
       </div>
@@ -391,6 +399,7 @@ function NewTopicForm({ onCreated, showToast }) {
   const [month, setMonth] = useState(String(now.getMonth() + 1));
   const [fairy, setFairy] = useState("");
   const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
 
   const create = async () => {
     if (!title.trim()) { showToast("주제를 입력해 주세요", true); return; }
@@ -398,10 +407,11 @@ function NewTopicForm({ onCreated, showToast }) {
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("topics").insert({
       month_label: monthLabel, title: title.trim(),
+      description: desc.trim() || null,
       host_label: fairy.trim() || null, created_by: user.id,
     });
     if (error) showToast("주제 생성 실패: " + error.message, true);
-    else { showToast("새 주제를 열었어요"); setFairy(""); setTitle(""); setOpen(false); onCreated(); }
+    else { showToast("새 주제를 열었어요"); setFairy(""); setTitle(""); setDesc(""); setOpen(false); onCreated(); }
   };
 
   if (!open) {
@@ -436,6 +446,10 @@ function NewTopicForm({ onCreated, showToast }) {
       <div className="field">
         <label>주제 (질문)</label>
         <textarea rows={2} placeholder="예: 올해 가장 잘한 결정 하나와, 미뤄둔 일 하나는?" value={title} onChange={(e) => setTitle(e.target.value)} />
+      </div>
+      <div className="field">
+        <label>설명 / 조건 (선택) — 줄바꿈 그대로 표시돼요</label>
+        <textarea rows={3} placeholder={"예시나 조건을 자유롭게 적어주세요.\n예시)\n삭제:\n강화:"} value={desc} onChange={(e) => setDesc(e.target.value)} />
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         <button className="btn-primary" onClick={create}>주제 열기</button>
