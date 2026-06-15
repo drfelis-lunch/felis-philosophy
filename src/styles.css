@@ -115,7 +115,7 @@ textarea, input { font-family: inherit; }
 .topic-fairy { font-size: 12px; color: var(--text-2); display: inline-flex; align-items: center; gap: 5px; }
 .topic-opendate { font-size: 11px; color: var(--text-3); }
 .topic-arrow { margin-left: auto; color: var(--text-3); display: flex; }
-.topic-q { font-size: 16px; color: var(--text); line-height: 1.5; margin-bottom: 12px; }
+.topic-q { font-size: 16px; color: var(--text); line-height: 1.5; margin-bottom: 12px; white-space: pre-wrap; word-break: break-word; }
 .topic-stats { display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--text-3); }
 .topic-stats span { display: inline-flex; align-items: center; gap: 5px; }
 .topic-stats .paw { width: 14px; height: 14px; color: var(--orange); }
@@ -139,7 +139,8 @@ textarea, input { font-family: inherit; }
 .detail-opendate { font-size: 11px; color: var(--text-3); }
 .topic-manage { margin-left: auto; display: flex; gap: 10px; }
 .topic-manage .act-mini { gap: 4px; }
-.detail-q { font-family: var(--serif); font-size: 19px; line-height: 1.6; color: var(--text); }
+.detail-q { font-family: var(--serif); font-size: 19px; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.detail-desc { font-size: 14px; line-height: 1.7; color: var(--text-2); margin-top: 12px; white-space: pre-wrap; word-break: break-word; padding-top: 12px; border-top: 1px solid var(--line-soft); }
 
 .section-label {
   font-size: 12px; color: var(--text-3); letter-spacing: 1px;
