@@ -4,15 +4,18 @@ import { Paw, CatFace, Icon, catColor } from "./icons.jsx";
 
 const LOGO_URL = "/felis-logo.svg";
 
-/* ============ 공통 유틸 ============ */
-function timeAgo(iso) {
+/* ============ 유틸 ============ */
+function shortDate(iso) {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}.${d.getDate()}`;
+}
+function timeOrDate(iso) {
   const d = new Date(iso);
   const diff = (Date.now() - d.getTime()) / 1000;
   if (diff < 60) return "방금";
   if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`;
-  return `${d.getMonth() + 1}.${d.getDate()}`;
+  return shortDate(iso);
 }
 
 function Toast({ msg, err }) {
@@ -29,7 +32,7 @@ function CatAvatar({ seq, sm }) {
   );
 }
 
-/* ============ 로그인 화면 ============ */
+/* ============ 로그인 ============ */
 function Login({ onError, error }) {
   const signIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -44,7 +47,7 @@ function Login({ onError, error }) {
   return (
     <div className="login-screen">
       <div className="login-logo">
-        <img src={LOGO_URL} alt="닥터펠리스" style={{ width: "100%", height: "100%" }} />
+        <img src={LOGO_URL} alt="닥터펠리스" />
       </div>
       <h1 className="login-title">펠리스 철학관</h1>
       <p className="login-flags">🐾 팀 닥터펠리스가 쌓아온 이야기들 🐾</p>
@@ -61,7 +64,7 @@ function Login({ onError, error }) {
   );
 }
 
-/* ============ 발자국(공감) 버튼 ============ */
+/* ============ 발자국 버튼 ============ */
 function PawButton({ targetType, targetId, count, reacted, onToggle }) {
   const [pop, setPop] = useState(false);
   const click = () => {
@@ -87,8 +90,7 @@ function Comment({ c, reaction, onToggleReaction, onEdit, onDelete }) {
         <CatAvatar seq={c.anon_seq} sm />
         <span className="comment-author">익명의 고양이 #{c.anon_seq}</span>
         {c.is_mine && <span className="post-mine-tag">나</span>}
-        {c.admin_email && <span className="comment-author" style={{ color: "#ffb38a" }}>· {c.admin_email}</span>}
-        <span className="comment-time">{timeAgo(c.created_at)}</span>
+        <span className="comment-date">{shortDate(c.created_at)}</span>
       </div>
       {editing ? (
         <>
@@ -117,7 +119,7 @@ function Comment({ c, reaction, onToggleReaction, onEdit, onDelete }) {
 }
 
 /* ============ 의견(글) ============ */
-function Post({ post, comments, reactions, isAdmin, onToggleReaction, onEditPost, onDeletePost, onAddComment, onEditComment, onDeleteComment }) {
+function Post({ post, comments, reactions, onToggleReaction, onEditPost, onDeletePost, onAddComment, onEditComment, onDeleteComment }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(post.body);
   const [reply, setReply] = useState("");
@@ -133,10 +135,10 @@ function Post({ post, comments, reactions, isAdmin, onToggleReaction, onEditPost
         <CatAvatar seq={post.anon_seq} />
         <span className="post-author">익명의 고양이 #{post.anon_seq}</span>
         {post.is_mine && <span className="post-mine-tag">나</span>}
-        {isAdmin && post.admin_email ? (
+        {post.admin_email ? (
           <span className="post-admin-name">{post.admin_email}</span>
         ) : (
-          <span className="post-time">{timeAgo(post.created_at)}</span>
+          <span className="post-date">{shortDate(post.created_at)}</span>
         )}
       </div>
 
@@ -235,7 +237,6 @@ function TopicDetail({ topic, profile, onBack, showToast }) {
     const { error } = await supabase.rpc("create_comment", { p_post: postId, p_body: body });
     if (error) showToast("답글 저장 실패", true); else load();
   };
-
   const editPost = async (id, body) => {
     const { error } = await supabase.from("posts").update({ body, updated_at: new Date().toISOString() }).eq("id", id);
     if (error) showToast("수정 실패", true); else load();
@@ -255,7 +256,6 @@ function TopicDetail({ topic, profile, onBack, showToast }) {
 
   const toggleReaction = async (targetType, targetId, reacted) => {
     const key = `${targetType}:${targetId}`;
-    // 낙관적 업데이트
     setReactions((prev) => {
       const cur = prev[key] || { cnt: 0, mine: false };
       return { ...prev, [key]: { cnt: reacted ? cur.cnt - 1 : cur.cnt + 1, mine: !reacted } };
@@ -278,21 +278,23 @@ function TopicDetail({ topic, profile, onBack, showToast }) {
   };
 
   const decoratedPosts = posts.map((p) => ({ ...p, admin_email: adminReveal ? identityMap[p.id] : null }));
+  const fairy = topic.host_label && topic.host_label.trim() ? topic.host_label : "이번 달 회의요정";
 
   return (
     <div className="wrap">
       <button className="back-link" onClick={onBack}><Icon name="back" size={15} /> 모든 주제</button>
 
       <div className="detail-topic">
-        <span className="detail-fairy"><Icon name="sparkle" size={13} /> 회의요정</span>
-        <div className="detail-q">{topic.title}</div>
-        <div className="detail-host">
-          {topic.month_label}{topic.host_label ? ` · 진행자 ${topic.host_label}` : ""}
+        <div className="detail-top">
+          <span className="detail-badge">{topic.month_label}</span>
+          <span className="detail-fairy"><Icon name="sparkle" size={13} /> 회의요정 {fairy}</span>
+          <span className="detail-opendate">· {shortDate(topic.created_at)} 개설</span>
         </div>
+        <div className="detail-q">{topic.title}</div>
       </div>
 
       {isAdmin && (
-        <div className="admin-bar" style={{ marginTop: 12 }}>
+        <div className="admin-bar">
           <span className="admin-bar-label"><Icon name="eye" size={14} /> 관리자 — 작성자 실명은 나에게만 보여요</span>
           <button className="reveal-toggle" onClick={toggleReveal}>
             <Icon name={adminReveal ? "eyeoff" : "eye"} size={12} /> {adminReveal ? "실명 숨기기" : "실명 보기"}
@@ -320,7 +322,7 @@ function TopicDetail({ topic, profile, onBack, showToast }) {
       ) : (
         decoratedPosts.map((p) => (
           <Post
-            key={p.id} post={p} comments={commentsByPost[p.id] || []} reactions={reactions} isAdmin={isAdmin}
+            key={p.id} post={p} comments={commentsByPost[p.id] || []} reactions={reactions}
             onToggleReaction={toggleReaction} onEditPost={editPost} onDeletePost={deletePost}
             onAddComment={addComment} onEditComment={editComment} onDeleteComment={deleteComment}
           />
@@ -330,37 +332,60 @@ function TopicDetail({ topic, profile, onBack, showToast }) {
   );
 }
 
-/* ============ 관리자: 새 주제 만들기 ============ */
+/* ============ 새 주제 만들기 (모두 가능) ============ */
 function NewTopicForm({ onCreated, showToast }) {
   const [open, setOpen] = useState(false);
-  const [month, setMonth] = useState("");
+  const now = new Date();
+  const [year, setYear] = useState(String(now.getFullYear()).slice(2));
+  const [month, setMonth] = useState(String(now.getMonth() + 1));
+  const [fairy, setFairy] = useState("");
   const [title, setTitle] = useState("");
-  const [host, setHost] = useState("");
 
   const create = async () => {
-    if (!month.trim() || !title.trim()) { showToast("월과 주제를 입력해 주세요", true); return; }
+    if (!title.trim()) { showToast("주제를 입력해 주세요", true); return; }
+    const monthLabel = `${year}년 ${month}월`;
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("topics").insert({
-      month_label: month.trim(), title: title.trim(), host_label: host.trim() || null, created_by: user.id,
+      month_label: monthLabel, title: title.trim(),
+      host_label: fairy.trim() || null, created_by: user.id,
     });
-    if (error) showToast("주제 생성 실패", true);
-    else { showToast("새 주제를 열었어요"); setMonth(""); setTitle(""); setHost(""); setOpen(false); onCreated(); }
+    if (error) showToast("주제 생성 실패: " + error.message, true);
+    else { showToast("새 주제를 열었어요"); setFairy(""); setTitle(""); setOpen(false); onCreated(); }
   };
 
   if (!open) {
     return (
-      <div className="admin-bar">
-        <span className="admin-bar-label"><Icon name="sparkle" size={14} /> 회의요정 — 이번 달 주제를 배정하세요</span>
-        <button className="reveal-toggle" onClick={() => setOpen(true)}>+ 새 주제 열기</button>
+      <div className="open-bar">
+        <span className="open-bar-label"><Icon name="sparkle" size={14} /> 이번 달 회의요정이 되어 주제를 열어보세요</span>
+        <button className="btn-primary" onClick={() => setOpen(true)}>+ 새 주제 열기</button>
       </div>
     );
   }
   return (
     <div className="new-topic-form">
-      <h3>🐾 이번 달 철학관 주제</h3>
-      <div className="field"><label>월 표시</label><input placeholder="예: 26년 6월" value={month} onChange={(e) => setMonth(e.target.value)} /></div>
-      <div className="field"><label>주제 (질문)</label><textarea rows={2} placeholder="예: 올해 가장 잘한 결정 하나와, 미뤄둔 일 하나는?" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
-      <div className="field"><label>진행자 (선택)</label><input placeholder="예: 로지" value={host} onChange={(e) => setHost(e.target.value)} /></div>
+      <h3>🐾 이번 달 철학관 주제 열기</h3>
+      <div className="field-row">
+        <div className="field">
+          <label>회의 년</label>
+          <select value={year} onChange={(e) => setYear(e.target.value)}>
+            {["25", "26", "27", "28"].map((y) => <option key={y} value={y}>{y}년</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label>회의 월</label>
+          <select value={month} onChange={(e) => setMonth(e.target.value)}>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{m}월</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="field">
+        <label>회의요정 (진행자) — 비우면 익명으로 표시돼요</label>
+        <input placeholder="예: 로지 (또는 비워두기)" value={fairy} onChange={(e) => setFairy(e.target.value)} />
+      </div>
+      <div className="field">
+        <label>주제 (질문)</label>
+        <textarea rows={2} placeholder="예: 올해 가장 잘한 결정 하나와, 미뤄둔 일 하나는?" value={title} onChange={(e) => setTitle(e.target.value)} />
+      </div>
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         <button className="btn-primary" onClick={create}>주제 열기</button>
         <button className="btn-ghost" onClick={() => setOpen(false)}>취소</button>
@@ -370,7 +395,7 @@ function NewTopicForm({ onCreated, showToast }) {
 }
 
 /* ============ 게시판(주제 목록) ============ */
-function Board({ profile, onOpen, showToast }) {
+function Board({ onOpen, showToast }) {
   const [topics, setTopics] = useState([]);
   const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(true);
@@ -396,32 +421,36 @@ function Board({ profile, onOpen, showToast }) {
         <p className="board-desc">매달 하나의 물음을, 익명의 고양이가 되어 함께 마주해요.</p>
       </div>
 
-      {profile?.is_admin && <NewTopicForm onCreated={load} showToast={showToast} />}
+      <NewTopicForm onCreated={load} showToast={showToast} />
 
       {loading ? (
         <div className="loading"><div className="spinner" />주제를 불러오는 중...</div>
       ) : topics.length === 0 ? (
-        <div className="empty"><Icon name="book" size={44} /><p>아직 열린 주제가 없어요.</p></div>
+        <div className="empty"><Icon name="book" size={44} /><p>아직 열린 주제가 없어요.<br />첫 번째 회의요정이 되어보세요.</p></div>
       ) : (
-        topics.map((t) => (
-          <div key={t.id} className="topic-card" onClick={() => onOpen(t)}>
-            <div className="topic-month">{t.month_label}</div>
-            <div className="topic-body">
+        topics.map((t) => {
+          const fairy = t.host_label && t.host_label.trim() ? t.host_label : "이번 달 회의요정";
+          return (
+            <div key={t.id} className="topic-card" onClick={() => onOpen(t)}>
+              <div className="topic-card-top">
+                <span className="topic-badge">{t.month_label}</span>
+                <span className="topic-fairy"><Icon name="sparkle" size={13} /> 회의요정 {fairy}</span>
+                <span className="topic-opendate">· {shortDate(t.created_at)} 개설</span>
+                <span className="topic-arrow"><Icon name="arrow" size={18} /></span>
+              </div>
               <div className="topic-q">{t.title}</div>
-              <div className="topic-meta">
-                {t.host_label && <span><Icon name="user" size={12} /> {t.host_label}</span>}
+              <div className="topic-stats">
                 <span><Paw className="paw" /> {counts[t.id] || 0}개의 이야기</span>
               </div>
             </div>
-            <span className="topic-arrow"><Icon name="arrow" size={18} /></span>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );
 }
 
-/* ============ 루트 앱 ============ */
+/* ============ 루트 ============ */
 export default function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -444,7 +473,6 @@ export default function App() {
   useEffect(() => {
     if (!session) { setProfile(null); return; }
     const email = session.user.email || "";
-    // 2차 도메인 안전장치: 내부앱(GCP)이 1차로 막지만 한번 더 검증
     if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
       setLoginError(`@${ALLOWED_DOMAIN} 계정만 입장할 수 있어요.`);
       supabase.auth.signOut();
@@ -454,6 +482,7 @@ export default function App() {
       .then(({ data }) => setProfile(data || { id: session.user.id, email, is_admin: false }));
   }, [session]);
 
+  const goHome = () => setActiveTopic(null);
   const signOut = async () => { await supabase.auth.signOut(); setActiveTopic(null); };
 
   if (authLoading) return <div className="loading" style={{ paddingTop: "30vh" }}><div className="spinner" />문을 여는 중...</div>;
@@ -464,27 +493,27 @@ export default function App() {
     <>
       <div className="topbar">
         <div className="topbar-inner">
-          <span className="brand-logo" onClick={() => setActiveTopic(null)} style={{ cursor: "pointer" }}>
-            <img src={LOGO_URL} alt="" style={{ width: "100%", height: "100%" }} />
-          </span>
-          <div className="brand-text">
-            <span className="brand-title">펠리스 철학관</span>
-            <span className="brand-sub">팀 닥터펠리스</span>
-          </div>
+          <button className="brand-link" onClick={goHome}>
+            <span className="brand-logo"><img src={LOGO_URL} alt="" /></span>
+            <span className="brand-text">
+              <span className="brand-title">펠리스 철학관</span>
+              <span className="brand-sub">팀 닥터펠리스</span>
+            </span>
+          </button>
           <div className="topbar-right">
             <span className="me-chip">
               {profile.is_admin && <span className="admin-dot" />}
               {profile.email}
             </span>
-            <button className="btn-ghost" onClick={signOut}><Icon name="logout" size={13} /></button>
+            <button className="btn-ghost" onClick={signOut} aria-label="로그아웃"><Icon name="logout" size={13} /></button>
           </div>
         </div>
       </div>
 
       {activeTopic ? (
-        <TopicDetail topic={activeTopic} profile={profile} onBack={() => setActiveTopic(null)} showToast={showToast} />
+        <TopicDetail topic={activeTopic} profile={profile} onBack={goHome} showToast={showToast} />
       ) : (
-        <Board profile={profile} onOpen={setActiveTopic} showToast={showToast} />
+        <Board onOpen={setActiveTopic} showToast={showToast} />
       )}
 
       <Toast msg={toast.msg} err={toast.err} />
