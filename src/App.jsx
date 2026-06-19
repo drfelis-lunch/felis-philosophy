@@ -241,6 +241,19 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // 실시간 구독: 이 주제의 글/댓글/투표 변경 시 자동 갱신 (디바운스)
+  useEffect(() => {
+    let timer = null;
+    const debouncedLoad = () => { clearTimeout(timer); timer = setTimeout(() => load(), 400); };
+    const channel = supabase
+      .channel(`topic-${topic.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "posts", filter: `topic_id=eq.${topic.id}` }, debouncedLoad)
+      .on("postgres_changes", { event: "*", schema: "public", table: "comments", filter: `topic_id=eq.${topic.id}` }, debouncedLoad)
+      .on("postgres_changes", { event: "*", schema: "public", table: "reactions" }, debouncedLoad)
+      .subscribe();
+    return () => { clearTimeout(timer); supabase.removeChannel(channel); };
+  }, [topic.id, load]);
+
   const submitPost = async () => {
     const body = newPost.trim();
     if (!body) return;
@@ -492,6 +505,19 @@ function Board({ onOpen, showToast }) {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // 실시간 구독: 주제/글/댓글 변경 시 목록 자동 갱신 (디바운스)
+  useEffect(() => {
+    let timer = null;
+    const debouncedLoad = () => { clearTimeout(timer); timer = setTimeout(() => load(), 400); };
+    const channel = supabase
+      .channel("board")
+      .on("postgres_changes", { event: "*", schema: "public", table: "topics" }, debouncedLoad)
+      .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, debouncedLoad)
+      .on("postgres_changes", { event: "*", schema: "public", table: "comments" }, debouncedLoad)
+      .subscribe();
+    return () => { clearTimeout(timer); supabase.removeChannel(channel); };
+  }, [load]);
 
   return (
     <div className="wrap">
