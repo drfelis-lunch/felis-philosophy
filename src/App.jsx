@@ -92,7 +92,11 @@ function Comment({ c, reaction, onToggleReaction, onEdit, onDelete }) {
         <CatAvatar seq={c.anon_seq} sm />
         <span className="comment-author">익명의 고양이 #{c.anon_seq}</span>
         {c.is_mine && <span className="post-mine-tag">나</span>}
-        <span className="comment-date">{shortDate(c.created_at)}</span>
+        {c.admin_email ? (
+          <span className="post-admin-name">{c.admin_email}</span>
+        ) : (
+          <span className="comment-date">{shortDate(c.created_at)}</span>
+        )}
       </div>
       {editing ? (
         <>
@@ -203,6 +207,7 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
   const [loading, setLoading] = useState(true);
   const [adminReveal, setAdminReveal] = useState(false);
   const [identityMap, setIdentityMap] = useState({});
+  const [commentIdentityMap, setCommentIdentityMap] = useState({});
   const [editingTopic, setEditingTopic] = useState(false);
   const [tFairy, setTFairy] = useState(topic.host_label || "");
   const [tTitle, setTTitle] = useState(topic.title);
@@ -301,9 +306,14 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
     if (adminReveal) { setAdminReveal(false); return; }
     const { data, error } = await supabase.rpc("admin_post_identity", { p_topic: topic.id });
     if (error) { showToast("실명을 볼 권한이 없어요", true); return; }
-    const m = {};
-    (data || []).forEach((x) => { m[x.post_id] = x.email; });
-    setIdentityMap(m);
+    const pm = {};
+    const cm = {};
+    (data || []).forEach((x) => {
+      if (x.kind === "comment") cm[x.item_id] = x.email;
+      else pm[x.item_id] = x.email;
+    });
+    setIdentityMap(pm);
+    setCommentIdentityMap(cm);
     setAdminReveal(true);
   };
 
@@ -404,7 +414,9 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
       ) : (
         decoratedPosts.map((p) => (
           <Post
-            key={p.id} post={p} comments={commentsByPost[p.id] || []} reactions={reactions}
+            key={p.id} post={p}
+            comments={(commentsByPost[p.id] || []).map((c) => ({ ...c, admin_email: adminReveal ? commentIdentityMap[c.id] : null }))}
+            reactions={reactions}
             onToggleReaction={toggleReaction} onEditPost={editPost} onDeletePost={deletePost}
             onAddComment={addComment} onEditComment={editComment} onDeleteComment={deleteComment}
           />
