@@ -74,9 +74,9 @@ function PawButton({ targetType, targetId, count, reacted, onToggle }) {
     onToggle(targetType, targetId, reacted);
   };
   return (
-    <button className={`act ${reacted ? "reacted" : ""}`} onClick={click} aria-label="발자국 공감">
+    <button className={`act ${reacted ? "reacted" : ""}`} onClick={click} aria-label="투표">
       <Paw className={`paw ${pop ? "paw-pop" : ""}`} />
-      {count > 0 ? count : "공감"}
+      {count > 0 ? count : "투표"}
     </button>
   );
 }
@@ -208,6 +208,8 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
   const [tTitle, setTTitle] = useState(topic.title);
   const [tDesc, setTDesc] = useState(topic.description || "");
   const isAdmin = profile?.is_admin;
+  const isHost = topic.created_by === profile?.id;
+  const canReveal = isAdmin || isHost;
   const canManageTopic = topic.created_by === profile?.id || isAdmin;
 
   const load = useCallback(async () => {
@@ -223,7 +225,15 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
     const cmap = {};
     (cs || []).forEach((c) => { (cmap[c.post_id] = cmap[c.post_id] || []).push(c); });
 
-    setPosts(ps || []);
+    // 투표순 정렬 (동률은 최신순)
+    const sortedPosts = (ps || []).slice().sort((a, b) => {
+      const va = (rmap[`post:${a.id}`] || {}).cnt || 0;
+      const vb = (rmap[`post:${b.id}`] || {}).cnt || 0;
+      if (vb !== va) return vb - va;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    setPosts(sortedPosts);
     setCommentsByPost(cmap);
     setReactions(rmap);
     setLoading(false);
@@ -277,7 +287,7 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
   const toggleReveal = async () => {
     if (adminReveal) { setAdminReveal(false); return; }
     const { data, error } = await supabase.rpc("admin_post_identity", { p_topic: topic.id });
-    if (error) { showToast("관리자 권한이 없어요", true); return; }
+    if (error) { showToast("실명을 볼 권한이 없어요", true); return; }
     const m = {};
     (data || []).forEach((x) => { m[x.post_id] = x.email; });
     setIdentityMap(m);
@@ -352,9 +362,9 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
         )}
       </div>
 
-      {isAdmin && (
+      {canReveal && (
         <div className="admin-bar">
-          <span className="admin-bar-label"><Icon name="eye" size={14} /> 관리자 — 작성자 실명은 나에게만 보여요</span>
+          <span className="admin-bar-label"><Icon name="eye" size={14} /> {isAdmin ? "관리자" : "이번 달 회의요정"} — 작성자 실명은 나에게만 보여요</span>
           <button className="reveal-toggle" onClick={toggleReveal}>
             <Icon name={adminReveal ? "eyeoff" : "eye"} size={12} /> {adminReveal ? "실명 숨기기" : "실명 보기"}
           </button>
@@ -372,7 +382,7 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
         </div>
       </div>
 
-      <div className="section-label">고양이들의 이야기 {posts.length > 0 ? `(${posts.length})` : ""}</div>
+      <div className="section-label">고양이들의 이야기 {posts.length > 0 ? `· 투표순 (${posts.length})` : ""}</div>
 
       {loading ? (
         <div className="loading"><div className="spinner" />이야기를 불러오는 중...</div>
