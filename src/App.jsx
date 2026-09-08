@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase, ALLOWED_DOMAIN } from "./supabaseClient";
-import { Paw, CatFace, Icon, catColor } from "./icons.jsx";
+import { Paw, CatFace, Icon, catColor, nickOf } from "./icons.jsx";
 
 const LOGO_URL = "/felis-logo.svg";
 
@@ -92,7 +92,10 @@ function Comment({ c, reaction, onToggleReaction, onEdit, onDelete }) {
         {c.author_email ? (
           <>
             <div className="cat-avatar sm" style={{ background: "#faece7", color: "#d85a30" }}><CatFace /></div>
-            <span className="comment-author">{c.author_email}</span>
+            <span className="comment-author">
+              <span className="nick-badge sm">{nickOf(c.author_email)}</span>
+              <span className="author-email">{c.author_email}</span>
+            </span>
           </>
         ) : (
           <>
@@ -150,7 +153,10 @@ function Post({ post, comments, reactions, onToggleReaction, onEditPost, onDelet
         {post.author_email ? (
           <>
             <div className="cat-avatar" style={{ background: "#faece7", color: "#d85a30" }}><CatFace /></div>
-            <span className="post-author">{post.author_email}</span>
+            <span className="post-author">
+              <span className="nick-badge">{nickOf(post.author_email)}</span>
+              <span className="author-email">{post.author_email}</span>
+            </span>
           </>
         ) : (
           <>

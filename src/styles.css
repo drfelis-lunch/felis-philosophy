@@ -177,7 +177,13 @@ textarea, input { font-family: inherit; }
   display: flex; align-items: center; justify-content: center;
 }
 .cat-avatar svg { width: 17px; height: 17px; }
-.post-author { font-size: 13px; font-weight: 500; color: var(--text); }
+.post-author { font-size: 13px; font-weight: 500; color: var(--text); display: inline-flex; align-items: center; gap: 7px; }
+.nick-badge {
+  font-size: 12px; font-weight: 600; color: var(--orange-text);
+  background: var(--orange-bg); padding: 2px 9px; border-radius: 8px;
+}
+.nick-badge.sm { font-size: 11px; padding: 1px 7px; }
+.author-email { font-size: 11px; font-weight: 400; color: var(--text-3); }
 .post-mine-tag {
   font-size: 10px; color: var(--orange); border: 1px solid rgba(216,90,48,0.35);
   padding: 1px 7px; border-radius: 10px; margin-left: 2px;
@@ -212,7 +218,7 @@ textarea, input { font-family: inherit; }
 .comment-head { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
 .cat-avatar.sm { width: 22px; height: 22px; }
 .cat-avatar.sm svg { width: 12px; height: 12px; }
-.comment-author { font-size: 12px; font-weight: 500; color: var(--text-2); }
+.comment-author { font-size: 12px; font-weight: 500; color: var(--text-2); display: inline-flex; align-items: center; gap: 6px; }
 .comment-date { font-size: 10px; color: var(--text-3); margin-left: auto; }
 .comment-body { font-size: 13px; color: var(--text-2); line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
 .comment-actions { display: flex; gap: 12px; margin-top: 6px; align-items: center; }

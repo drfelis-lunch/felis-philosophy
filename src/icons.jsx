@@ -55,3 +55,19 @@ export const CAT_COLORS = [
 export function catColor(seq) {
   return CAT_COLORS[(seq - 1) % CAT_COLORS.length];
 }
+
+// 이메일 → 한글 닉네임 매핑
+// 나중에 여기만 채우면 자동으로 한글 뱃지가 표시됩니다. (예: "june@drfelis.com": "준")
+// 매핑에 없는 이메일은 @ 앞부분(영문)이 그대로 뱃지에 표시됩니다.
+export const NICKNAMES = {
+  // "june@drfelis.com": "준",
+  // "merry@drfelis.com": "메리",
+  // "blair@drfelis.com": "블레어",
+  // "jenny@drfelis.com": "제니",
+  // "suzy@drfelis.com": "수지",
+};
+export function nickOf(email) {
+  if (!email) return "";
+  if (NICKNAMES[email]) return NICKNAMES[email];
+  return email.split("@")[0];
+}
