@@ -89,8 +89,17 @@ function Comment({ c, reaction, onToggleReaction, onEdit, onDelete }) {
   return (
     <div>
       <div className="comment-head">
-        <CatAvatar seq={c.anon_seq} sm />
-        <span className="comment-author">익명의 고양이 #{c.anon_seq}</span>
+        {c.author_email ? (
+          <>
+            <div className="cat-avatar sm" style={{ background: "#faece7", color: "#d85a30" }}><CatFace /></div>
+            <span className="comment-author">{c.author_email}</span>
+          </>
+        ) : (
+          <>
+            <CatAvatar seq={c.anon_seq} sm />
+            <span className="comment-author">익명의 고양이 #{c.anon_seq}</span>
+          </>
+        )}
         {c.is_mine && <span className="post-mine-tag">나</span>}
         {c.admin_email ? (
           <span className="post-admin-name">{c.admin_email}</span>
@@ -138,8 +147,17 @@ function Post({ post, comments, reactions, onToggleReaction, onEditPost, onDelet
   return (
     <div className="post">
       <div className="post-head">
-        <CatAvatar seq={post.anon_seq} />
-        <span className="post-author">익명의 고양이 #{post.anon_seq}</span>
+        {post.author_email ? (
+          <>
+            <div className="cat-avatar" style={{ background: "#faece7", color: "#d85a30" }}><CatFace /></div>
+            <span className="post-author">{post.author_email}</span>
+          </>
+        ) : (
+          <>
+            <CatAvatar seq={post.anon_seq} />
+            <span className="post-author">익명의 고양이 #{post.anon_seq}</span>
+          </>
+        )}
         {post.is_mine && <span className="post-mine-tag">나</span>}
         {post.admin_email ? (
           <span className="post-admin-name">{post.admin_email}</span>
@@ -187,7 +205,7 @@ function Post({ post, comments, reactions, onToggleReaction, onEditPost, onDelet
           ))}
           {showReply && (
             <div className="reply-box">
-              <textarea placeholder="익명으로 답글 남기기..." value={reply} onChange={(e) => setReply(e.target.value)}
+              <textarea placeholder="답글 남기기 (실명으로 게시됩니다)..." value={reply} onChange={(e) => setReply(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendReply(); }} />
               <button className="btn-reply" onClick={sendReply}>남기기</button>
             </div>
@@ -396,11 +414,11 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
 
       <div className="section-label">내 생각 남기기</div>
       <div className="composer">
-        <textarea placeholder="이 물음 앞에서 떠오른 생각을 적어보세요. 아무도 누가 썼는지 몰라요."
+        <textarea placeholder="이 물음 앞에서 떠오른 생각을 적어보세요. 실명으로 게시됩니다."
           value={newPost} onChange={(e) => setNewPost(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitPost(); }} />
         <div className="composer-row">
-          <span className="composer-hint"><Paw className="paw" /> 익명으로 게시됩니다 · ⌘+Enter</span>
+          <span className="composer-hint"><Paw className="paw" /> 실명으로 게시됩니다 · ⌘+Enter</span>
           <button className="btn-primary" onClick={submitPost} disabled={!newPost.trim()}>남기기</button>
         </div>
       </div>
