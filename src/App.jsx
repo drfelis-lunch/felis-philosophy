@@ -342,7 +342,7 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
   };
 
   const decoratedPosts = posts.map((p) => ({ ...p, admin_email: adminReveal ? identityMap[p.id] : null }));
-  const fairy = topic.host_label && topic.host_label.trim() ? topic.host_label : "이번 달 회의요정";
+  const fairy = topic.host_label && topic.host_label.trim() ? topic.host_label : "이번 달 주제요정";
 
   const saveTopic = async () => {
     if (!tTitle.trim()) { showToast("주제를 입력해 주세요", true); return; }
@@ -372,7 +372,7 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
         {editingTopic ? (
           <>
             <div className="field">
-              <label>회의요정 (진행자) — 비우면 익명</label>
+              <label>주제요정 (진행자) — 비우면 익명</label>
               <input value={tFairy} onChange={(e) => setTFairy(e.target.value)} placeholder="예: 로지 (또는 비워두기)" />
             </div>
             <div className="field">
@@ -392,7 +392,7 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
           <>
             <div className="detail-top">
               <span className="detail-badge">{topic.month_label}</span>
-              <span className="detail-fairy"><Icon name="sparkle" size={13} /> 회의요정 {fairy}</span>
+              <span className="detail-fairy"><Icon name="sparkle" size={13} /> 주제요정 {fairy}</span>
               <span className="detail-opendate">· {shortDate(topic.created_at)} 개설</span>
               {canManageTopic && (
                 <span className="topic-manage">
@@ -411,7 +411,7 @@ function TopicDetail({ topic, profile, onBack, onTopicChanged, showToast }) {
 
       {canReveal && (
         <div className="admin-bar">
-          <span className="admin-bar-label"><Icon name="eye" size={14} /> {isAdmin ? "관리자" : "이번 달 회의요정"} — 작성자 실명은 나에게만 보여요</span>
+          <span className="admin-bar-label"><Icon name="eye" size={14} /> {isAdmin ? "관리자" : "이번 달 주제요정"} — 작성자 실명은 나에게만 보여요</span>
           <button className="reveal-toggle" onClick={toggleReveal}>
             <Icon name={adminReveal ? "eyeoff" : "eye"} size={12} /> {adminReveal ? "실명 숨기기" : "실명 보기"}
           </button>
@@ -476,7 +476,7 @@ function NewTopicForm({ onCreated, showToast }) {
   if (!open) {
     return (
       <div className="open-bar">
-        <span className="open-bar-label"><Icon name="sparkle" size={14} /> 이번 달 회의요정이 되어 주제를 열어보세요</span>
+        <span className="open-bar-label"><Icon name="sparkle" size={14} /> 이번 달 주제요정이 되어 주제를 열어보세요</span>
         <button className="btn-primary" onClick={() => setOpen(true)}>+ 새 주제 열기</button>
       </div>
     );
@@ -499,7 +499,7 @@ function NewTopicForm({ onCreated, showToast }) {
         </div>
       </div>
       <div className="field">
-        <label>회의요정 (진행자) — 비우면 익명으로 표시돼요</label>
+        <label>주제요정 (진행자) — 비우면 익명으로 표시돼요</label>
         <input placeholder="예: 로지 (또는 비워두기)" value={fairy} onChange={(e) => setFairy(e.target.value)} />
       </div>
       <div className="field">
@@ -568,15 +568,15 @@ function Board({ onOpen, showToast }) {
       {loading ? (
         <div className="loading"><div className="spinner" />주제를 불러오는 중...</div>
       ) : topics.length === 0 ? (
-        <div className="empty"><Icon name="book" size={44} /><p>아직 열린 주제가 없어요.<br />첫 번째 회의요정이 되어보세요.</p></div>
+        <div className="empty"><Icon name="book" size={44} /><p>아직 열린 주제가 없어요.<br />첫 번째 주제요정이 되어보세요.</p></div>
       ) : (
         topics.map((t) => {
-          const fairy = t.host_label && t.host_label.trim() ? t.host_label : "이번 달 회의요정";
+          const fairy = t.host_label && t.host_label.trim() ? t.host_label : "이번 달 주제요정";
           return (
             <div key={t.id} className="topic-card" onClick={() => onOpen(t)}>
               <div className="topic-card-top">
                 <span className="topic-badge">{t.month_label}</span>
-                <span className="topic-fairy"><Icon name="sparkle" size={13} /> 회의요정 {fairy}</span>
+                <span className="topic-fairy"><Icon name="sparkle" size={13} /> 주제요정 {fairy}</span>
                 <span className="topic-opendate">· {shortDate(t.created_at)} 개설</span>
                 <span className="topic-arrow"><Icon name="arrow" size={18} /></span>
               </div>
